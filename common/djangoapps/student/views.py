@@ -513,6 +513,61 @@ def is_course_blocked(request, redeemed_registration_codes, course_key):
     return blocked
 
 
+def profile_progress(user):
+    try:
+        profile = UserProfile.objects.get(user=user)
+    except ObjectDoesNotExist, MultipleObjectsReturned:
+        return False
+
+    completed_fields = 0
+    uncompleted_fields = []
+    total_profile_fields = 8
+
+    if profile.name is not None:
+        completed_fields += 1
+    else:
+        uncompleted_fields.append('name')
+
+    if profile.language is not None:
+        completed_fields += 1
+    else:
+        uncompleted_fields.append('language')
+
+    if profile.year_of_birth is not None:
+        completed_fields += 1
+    else:
+        uncompleted_fields.append('year of birth')
+
+    if profile.gender is not None:
+        completed_fields += 1
+    else:
+        uncompleted_fields.append('gender')
+
+    if profile.level_of_education is not None:
+        completed_fields += 1
+    else:
+        uncompleted_fields.append('level of education')
+
+    if profile.country is not None:
+        completed_fields += 1
+    else:
+        uncompleted_fields.append('country')
+
+    if profile.bio is not None:
+        completed_fields += 1
+    else:
+        uncompleted_fields.append('bio')
+
+    if profile.profile_image_uploaded_at is not None:
+        completed_fields += 1
+    else:
+        uncompleted_fields.append('profile image')
+
+    percentage_completed = int((float(completed_fields) / float(total_profile_fields)) * 100)
+
+    return percentage_completed, uncompleted_fields
+
+
 @login_required
 @ensure_csrf_cookie
 def dashboard(request):
@@ -676,6 +731,9 @@ def dashboard(request):
     else:
         redirect_message = ''
 
+    # get progress for profile
+    profile_completed, missing_profile_details = profile_progress(user)
+
     context = {
         'enrollment_message': enrollment_message,
         'redirect_message': redirect_message,
@@ -706,6 +764,8 @@ def dashboard(request):
         'courses_requirements_not_met': courses_requirements_not_met,
         'nav_hidden': True,
         'course_programs': course_programs,
+        'profile_completed': profile_completed,
+        'missing_profile_details': missing_profile_details,
     }
 
     return render_to_response('dashboard.html', context)
