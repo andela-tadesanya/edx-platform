@@ -127,6 +127,7 @@ from notification_prefs.views import enable_notifications
 # Note that this lives in openedx, so this dependency should be refactored.
 from openedx.core.djangoapps.user_api.preferences import api as preferences_api
 from openedx.core.djangoapps.programs.utils import get_programs_for_dashboard
+from django.shortcuts import get_object_or_404
 
 
 log = logging.getLogger("edx.student")
@@ -514,58 +515,22 @@ def is_course_blocked(request, redeemed_registration_codes, course_key):
 
 
 def profile_progress(user):
-    try:
-        profile = UserProfile.objects.get(user=user)
-    except ObjectDoesNotExist, MultipleObjectsReturned:
-        return False
+    profile = get_object_or_404(UserProfile, user=user)
 
-    completed_fields = 0
-    uncompleted_fields = []
-    total_profile_fields = 8
+    profile_fields = [profile.name,
+                      profile.language,
+                      profile.year_of_birth,
+                      profile.gender,
+                      profile.level_of_education,
+                      profile.country,
+                      profile.bio,
+                      profile.profile_image_uploaded_at]
 
-    if profile.name is not None:
-        completed_fields += 1
-    else:
-        uncompleted_fields.append('name')
+    completed_fields = len(filter(lambda x: x is not None, profile_fields))
 
-    if profile.language is not None:
-        completed_fields += 1
-    else:
-        uncompleted_fields.append('language')
+    percentage_completed = int((float(completed_fields) / float(len(profile_fields)) * 100))
 
-    if profile.year_of_birth is not None:
-        completed_fields += 1
-    else:
-        uncompleted_fields.append('year of birth')
-
-    if profile.gender is not None:
-        completed_fields += 1
-    else:
-        uncompleted_fields.append('gender')
-
-    if profile.level_of_education is not None:
-        completed_fields += 1
-    else:
-        uncompleted_fields.append('level of education')
-
-    if profile.country is not None:
-        completed_fields += 1
-    else:
-        uncompleted_fields.append('country')
-
-    if profile.bio is not None:
-        completed_fields += 1
-    else:
-        uncompleted_fields.append('bio')
-
-    if profile.profile_image_uploaded_at is not None:
-        completed_fields += 1
-    else:
-        uncompleted_fields.append('profile image')
-
-    percentage_completed = int((float(completed_fields) / float(total_profile_fields)) * 100)
-
-    return percentage_completed, uncompleted_fields
+    return percentage_completed
 
 
 @login_required
@@ -732,7 +697,7 @@ def dashboard(request):
         redirect_message = ''
 
     # get progress for profile
-    profile_completed, missing_profile_details = profile_progress(user)
+    profile_completed = profile_progress(user)
 
     context = {
         'enrollment_message': enrollment_message,
@@ -765,7 +730,6 @@ def dashboard(request):
         'nav_hidden': True,
         'course_programs': course_programs,
         'profile_completed': profile_completed,
-        'missing_profile_details': missing_profile_details,
     }
 
     return render_to_response('dashboard.html', context)
