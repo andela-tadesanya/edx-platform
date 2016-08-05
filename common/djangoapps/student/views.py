@@ -528,6 +528,11 @@ def profile_progress(user):
 
     completed_fields = len(filter(lambda x: x is not None, profile_fields))
 
+    # check for company name
+    if hasattr(profile, 'usercompany'):
+        completed_fields += 1
+    
+
     percentage_completed = int((float(completed_fields) / float(len(profile_fields)) * 100))
 
     return percentage_completed
