@@ -56,6 +56,7 @@ from util.query import use_read_replica_if_available
 from util.milestones_helpers import is_entrance_exams_enabled
 
 
+
 UNENROLL_DONE = Signal(providing_args=["course_enrollment", "skip_refund"])
 log = logging.getLogger(__name__)
 AUDIT_LOG = logging.getLogger("audit")
@@ -452,6 +453,15 @@ def user_post_save_callback(sender, **kwargs):
         excluded_fields=['last_login', 'first_name', 'last_name'],
         hidden_fields=['password']
     )
+
+
+class UserCompany(models.Model):
+    '''Holds the company field for each student user profile'''
+    userprofile = models.OneToOneField(UserProfile, on_delete=models.CASCADE, primary_key=True, related_name='company', default='')
+    company = models.CharField(blank=True, null=True, max_length=50, db_index=True)
+
+    class Meta(object):
+        db_table = "auth_usercompany"
 
 
 class UserSignupSource(models.Model):
